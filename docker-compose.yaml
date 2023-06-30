@@ -1,0 +1,57 @@
+version: "3.7"
+services:
+  app:
+    build:
+      args:
+        user: mouad
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: ge-livewire:v1
+    container_name: ge-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - ge-app
+    ports:
+      - "9000:9000"
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: ge-app-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ge-database
+      MYSQL_ROOT_PASSWORD: ge-rootpassword
+      MYSQL_PASSWORD: ge-password
+      MYSQL_USER: ge-user
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    ports:
+      - "3305:3306"
+    volumes:
+      - ./data-ge/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - ge-app
+
+  nginx:
+    image: nginx:latest
+    container_name: ge-app-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./nginx:/etc/nginx/conf.d/
+    networks:
+      - ge-app
+    depends_on:
+      - app
+
+networks:
+  ge-app:
+    driver: bridge
